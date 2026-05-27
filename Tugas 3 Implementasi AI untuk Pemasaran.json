@@ -1,0 +1,313 @@
+{
+  "name": "Tugas 3 Implementasi AI untuk Pemasaran",
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -720,
+        64
+      ],
+      "id": "39e41ac9-1339-4558-aca3-efa9289adff2",
+      "name": "Menunggu Prosees Generator Gambar",
+      "webhookId": "b5d035f4-b373-4d8b-b7ab-27af18f18e51"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Submit Text Prompt untuk Generate Gambar').item.json.api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -544,
+        64
+      ],
+      "id": "89926523-863f-47af-8e9e-5ae250236051",
+      "name": "Mendapatkan Status Generate"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"grok-imagine/image-to-video\",\n  \"input\": {\n    \"image_urls\": [\n      \"{{ $json.img_url.replace('/file/d/', '/uc?export=view&id=').split('/view')[0] }}\"\n    ],\n    \"prompt\": \"{{ $json.prompt }}\",\n    \"mode\": \"normal\",\n    \"duration\": 6,\n    \"resolution\": \"480p\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -928,
+        64
+      ],
+      "id": "bb2aed03-688f-405f-bc93-5b225286c4e5",
+      "name": "Mengirim Image Generation Request ke KIE.API API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "caffd283-0bcd-4216-920f-fe5f132b3bba",
+              "leftValue": "={{ $json.data.state }}",
+              "rightValue": "=success",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        64
+      ],
+      "id": "fa605786-58e6-4488-b094-df98feb80262",
+      "name": "Check Jika Generate Sudah Selesai"
+    },
+    {
+      "parameters": {
+        "formTitle": "Generate Gambar Konten Otomatis",
+        "formDescription": "Isi informasi dibawah ini untuk memulai proses generate gambar",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "prompt"
+            },
+            {
+              "fieldLabel": "img_url"
+            },
+            {
+              "fieldLabel": "task_type"
+            },
+            {
+              "fieldLabel": "api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -1120,
+        64
+      ],
+      "id": "0f4b56f0-fbbd-41ee-b217-a2dfd72d2785",
+      "name": "Submit Text Prompt untuk Generate Gambar",
+      "webhookId": "58bcad4a-23a5-4b6c-b1bb-e9c3bf90fea5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = JSON.parse($json.data.resultJson);\n\nreturn [{\n  videoUrl: result.resultUrls?.[0] || null\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        48
+      ],
+      "id": "0f1ba7a2-a824-46e2-8ecf-784a6f4265e8",
+      "name": "Parse Video URL"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        48
+      ],
+      "id": "01a3101d-255f-44b3-aae9-c10ed1528ff7",
+      "name": "Download Video"
+    },
+    {
+      "parameters": {
+        "name": "Video Topik 3",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1iEpAbXyGO6XkwpP-7H_Ii0zpqVaXUHA2",
+          "mode": "list",
+          "cachedResultName": "Hasil Topik 2 dan 3",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1iEpAbXyGO6XkwpP-7H_Ii0zpqVaXUHA2"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        288,
+        48
+      ],
+      "id": "a256ceda-7e0b-4465-af44-462135259fec",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "LFaa5MWoRlm0qq5R",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Menunggu Prosees Generator Gambar": {
+      "main": [
+        [
+          {
+            "node": "Mendapatkan Status Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mendapatkan Status Generate": {
+      "main": [
+        [
+          {
+            "node": "Check Jika Generate Sudah Selesai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mengirim Image Generation Request ke KIE.API API": {
+      "main": [
+        [
+          {
+            "node": "Menunggu Prosees Generator Gambar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Jika Generate Sudah Selesai": {
+      "main": [
+        [
+          {
+            "node": "Parse Video URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Menunggu Prosees Generator Gambar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit Text Prompt untuk Generate Gambar": {
+      "main": [
+        [
+          {
+            "node": "Mengirim Image Generation Request ke KIE.API API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Video URL": {
+      "main": [
+        [
+          {
+            "node": "Download Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "685772fb-a150-43ef-a1e2-0249bee73958",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1e2472ac21b40c13079c923ffa56c3cd657409e4354890ded796a3ac7d04701"
+  },
+  "id": "fMwimH0dryXlHSBr",
+  "tags": []
+}
